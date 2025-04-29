@@ -30,15 +30,18 @@ namespace Cedar { namespace Doubles {
     bool InvocationMatcher::matches_arguments(NSInvocation * const invocation) const {
         bool matches = true;
         size_t index = OBJC_DEFAULT_ARGUMENT_COUNT;
+        
         for (arguments_vector_t::const_iterator cit = arguments_.begin(); cit != arguments_.end() && matches; ++cit, ++index) {
             const char *actualArgumentEncoding = [invocation.methodSignature getArgumentTypeAtIndex:index];
             NSUInteger actualArgumentSize;
             NSGetSizeAndAlignment(actualArgumentEncoding, &actualArgumentSize, nil);
-
-            char actualArgumentBytes[actualArgumentSize];
-            [invocation getArgument:&actualArgumentBytes atIndex:index];
-            matches = (*cit)->matches_bytes(&actualArgumentBytes);
+            
+            std::vector<char> actualArgumentBytes(actualArgumentSize);
+            [invocation getArgument:actualArgumentBytes.data() atIndex:index];
+            
+            matches = (*cit)->matches_bytes(actualArgumentBytes.data());
         }
+        
         return matches;
     }
 
