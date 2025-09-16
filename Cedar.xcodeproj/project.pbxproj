@@ -3224,7 +3224,6 @@
 			buildPhases = (
 				AE4864F51B067620005DB302 /* Headers */,
 				AE4864F31B067620005DB302 /* Sources */,
-				344077C51BA76D1700037486 /* Set Git SHA on Framework */,
 			);
 			buildRules = (
 			);
@@ -3314,6 +3313,7 @@
 				ORGANIZATIONNAME = Pivotal;
 				TargetAttributes = {
 					1F45A3C8180E4796003C1E36 = {
+						DevelopmentTeam = 46Y7X9ALP4;
 						TestTargetID = 96B5F9F5144A81A7000A6A5D;
 					};
 					346261DE1B995239002CAEBD = {
@@ -3330,6 +3330,9 @@
 					};
 					34D7C4681BB9B71600E8E523 = {
 						CreatedOnToolsVersion = 7.1;
+					};
+					96B5F9F5144A81A7000A6A5D = {
+						DevelopmentTeam = 46Y7X9ALP4;
 					};
 					AE03FBE81B06C33B00013784 = {
 						CreatedOnToolsVersion = 6.3.1;
@@ -3470,20 +3473,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "PLIST_PATH=../${CONFIGURATION}-iphoneuniversal/${PRODUCT_NAME}.framework/Resources/Info.plist\nINFOPLIST_PATH=${PLIST_PATH} /usr/bin/env ruby scripts/set_git_sha_on_framework.rb";
-		};
-		344077C51BA76D1700037486 /* Set Git SHA on Framework */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-			);
-			name = "Set Git SHA on Framework";
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "/usr/bin/env ruby scripts/set_git_sha_on_framework.rb";
 		};
 		3444602A190CC3320076655A /* Copy Info.plist to framework */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -4413,6 +4402,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 46Y7X9ALP4;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(DEVELOPER_LIBRARY_DIR)/Frameworks",
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
@@ -4450,6 +4440,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				DEVELOPMENT_TEAM = 46Y7X9ALP4;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(DEVELOPER_LIBRARY_DIR)/Frameworks",
 					"$(DEVELOPER_FRAMEWORKS_DIR)",
@@ -4919,6 +4910,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
+				DEVELOPMENT_TEAM = 46Y7X9ALP4;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -4938,6 +4930,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = YES;
+				DEVELOPMENT_TEAM = 46Y7X9ALP4;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
