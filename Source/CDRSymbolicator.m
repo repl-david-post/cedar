@@ -209,7 +209,13 @@ NSUInteger CDRCallerStackAddress() {
     }
 
     // NB: this will almost always fail if the version of Xcode at this location differs from the version used to build the tests
-    NSString *command = [DEVELOPER_BIN_DIR stringByAppendingPathComponent:@"atos"];
+    NSString *developerBinDir = [[[NSProcessInfo processInfo] environment] objectForKey:@"DEVELOPER_BIN_DIR"];
+    if (!developerBinDir) {
+        // fallback if not set
+        developerBinDir = @"/Applications/Xcode.app/Contents/Developer/usr/bin";
+    }
+
+    NSString *command = [developerBinDir stringByAppendingPathComponent:@"atos"];
     NSString *output = [self.class shellOutWithCommand:command arguments:arguments];
     self.outputLines = [output componentsSeparatedByString:@"\n"];
 }
