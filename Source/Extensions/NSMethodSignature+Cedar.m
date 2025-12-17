@@ -20,9 +20,10 @@ static const char *Block_signature(id blockObj) {
 
     NSString *quotedSubstringsPattern = @"\".*?\"";
     NSString *angleBracketedSubstringsPattern = @"<.*?>";
+    NSString *parenthesizedSubstringsPattern = @"\\(.*?\\)";
 
     NSString *strippedSignatureTypeString = signatureTypesString;
-    for (NSString *pattern in @[quotedSubstringsPattern, angleBracketedSubstringsPattern]) {
+    for (NSString *pattern in @[quotedSubstringsPattern, angleBracketedSubstringsPattern, parenthesizedSubstringsPattern]) {
         NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:NULL];
         strippedSignatureTypeString = [regex stringByReplacingMatchesInString:strippedSignatureTypeString options:0 range:NSMakeRange(0, [strippedSignatureTypeString length]) withTemplate:@""];
     }
