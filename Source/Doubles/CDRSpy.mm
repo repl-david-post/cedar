@@ -151,9 +151,26 @@
 - (NSMethodSignature *)methodSignatureForSelector:(SEL)sel {
     __block NSMethodSignature *originalMethodSignature = nil;
 
-    [self as_spied_class:^{
-        originalMethodSignature = [self methodSignatureForSelector:sel];
-    }];
+    @try {
+        [self as_spied_class:^{
+            originalMethodSignature = [self methodSignatureForSelector:sel];
+        }];
+    } @catch (NSException *exception) {
+        // If getting the signature fails due to encoding issues, try using the class method directly
+        Class originalClass = [CDRSpyInfo spyInfoForObject:self].spiedClass;
+        Method method = class_getInstanceMethod(originalClass, sel);
+        if (method) {
+            const char *types = method_getTypeEncoding(method);
+            if (types) {
+                NSString *cleanedTypes = cdr_stripProblematicEncodings(types);
+                originalMethodSignature = [NSMethodSignature signatureWithObjCTypes:[cleanedTypes UTF8String]];
+            }
+        }
+
+        if (!originalMethodSignature) {
+            @throw exception;
+        }
+    }
 
     // Sanitize the signature to handle complex type encodings (e.g., BOOL unions in Xcode 26+)
     return [NSMethodSignature cdr_sanitizedSignatureFromSignature:originalMethodSignature];
