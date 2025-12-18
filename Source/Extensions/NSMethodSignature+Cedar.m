@@ -39,6 +39,25 @@ static NSString *cdr_stripProblematicEncodings(const char *typeEncoding) {
     return [NSMethodSignature signatureWithObjCTypes:[strippedSignatureTypeString UTF8String]];
 }
 
++ (NSMethodSignature *)cdr_sanitizedSignatureFromSignature:(NSMethodSignature *)signature {
+    if (!signature) {
+        return nil;
+    }
+
+    // Build a cleaned signature string from the original signature
+    NSMutableString *cleanedSignatureString = [NSMutableString string];
+
+    // Add the return type
+    [cleanedSignatureString appendString:cdr_stripProblematicEncodings([signature methodReturnType])];
+
+    // Add all argument types
+    for (NSUInteger i = 0; i < [signature numberOfArguments]; i++) {
+        [cleanedSignatureString appendString:cdr_stripProblematicEncodings([signature getArgumentTypeAtIndex:i])];
+    }
+
+    return [NSMethodSignature signatureWithObjCTypes:[cleanedSignatureString UTF8String]];
+}
+
 - (NSMethodSignature *)cdr_signatureWithoutSelectorArgument {
     NSAssert([self numberOfArguments]>1 && strcmp([self getArgumentTypeAtIndex:1], ":")==0, @"Unable to remove _cmd from a method signature without a _cmd argument");
 

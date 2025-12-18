@@ -1,4 +1,5 @@
 #import "NSInvocation+Cedar.h"
+#import "NSMethodSignature+Cedar.h"
 #import "CDRFake.h"
 #import <objc/runtime.h>
 #import "StubbedMethod.h"
@@ -36,7 +37,8 @@
     if ([self.cedar_double_impl has_rejected_method_for:sel]) {
         return nil;
     }
-    return [self.klass instanceMethodSignatureForSelector:sel];
+    NSMethodSignature *signature = [self.klass instanceMethodSignatureForSelector:sel];
+    return [NSMethodSignature cdr_sanitizedSignatureFromSignature:signature];
 }
 
 - (void)forwardInvocation:(NSInvocation *)invocation {

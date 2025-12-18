@@ -1,4 +1,5 @@
 #import "NSInvocation+Cedar.h"
+#import "NSMethodSignature+Cedar.h"
 #import "CDRSpy.h"
 #import <objc/runtime.h>
 #import "StubbedMethod.h"
@@ -154,7 +155,8 @@
         originalMethodSignature = [self methodSignatureForSelector:sel];
     }];
 
-    return originalMethodSignature;
+    // Sanitize the signature to handle complex type encodings (e.g., BOOL unions in Xcode 26+)
+    return [NSMethodSignature cdr_sanitizedSignatureFromSignature:originalMethodSignature];
 }
 
 - (BOOL)respondsToSelector:(SEL)selector {

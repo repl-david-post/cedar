@@ -1,5 +1,6 @@
 #import "CDRFake.h"
 #import "CDRClassFake.h"
+#import "NSMethodSignature+Cedar.h"
 #import "objc/runtime.h"
 #import "StubbedMethod.h"
 #import "CedarDoubleImpl.h"
@@ -53,7 +54,7 @@
 #pragma mark - KVC Handling Implementation
 
 - (void)handleAllowedKVCSelector:(SEL)sel withValue:(id)value forKey:(NSString *)key {
-    NSMethodSignature *signature = [self.klass methodSignatureForSelector:sel];
+    NSMethodSignature *signature = [NSMethodSignature cdr_sanitizedSignatureFromSignature:[self.klass methodSignatureForSelector:sel]];
     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
     [invocation setSelector:sel];
     [invocation setArgument:&value atIndex:2];
@@ -72,7 +73,7 @@
 }
 
 - (id)handleAllowedKVCSelector:(SEL)sel forKey:(NSString *)key {
-    NSMethodSignature *signature = [self.klass methodSignatureForSelector:sel];
+    NSMethodSignature *signature = [NSMethodSignature cdr_sanitizedSignatureFromSignature:[self.klass methodSignatureForSelector:sel]];
     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
     [invocation setSelector:sel];
     [invocation setArgument:&key atIndex:2];
