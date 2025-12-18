@@ -12,32 +12,39 @@ static const char *Block_signature(id blockObj) {
     return signature;
 }
 
-@implementation NSMethodSignature (Cedar)
-
-+ (NSMethodSignature *)cdr_signatureFromBlock:(id)block {
-    const char *signatureTypes = Block_signature(block);
-    NSString *signatureTypesString = [NSString stringWithUTF8String:signatureTypes];
+static NSString *cdr_stripProblematicEncodings(const char *typeEncoding) {
+    NSString *typeEncodingString = [NSString stringWithUTF8String:typeEncoding];
 
     NSString *quotedSubstringsPattern = @"\".*?\"";
     NSString *angleBracketedSubstringsPattern = @"<.*?>";
     NSString *parenthesizedSubstringsPattern = @"\\(.*?\\)";
 
-    NSString *strippedSignatureTypeString = signatureTypesString;
+    NSString *strippedTypeEncoding = typeEncodingString;
     for (NSString *pattern in @[quotedSubstringsPattern, angleBracketedSubstringsPattern, parenthesizedSubstringsPattern]) {
         NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:NULL];
-        strippedSignatureTypeString = [regex stringByReplacingMatchesInString:strippedSignatureTypeString options:0 range:NSMakeRange(0, [strippedSignatureTypeString length]) withTemplate:@""];
+        strippedTypeEncoding = [regex stringByReplacingMatchesInString:strippedTypeEncoding options:0 range:NSMakeRange(0, [strippedTypeEncoding length]) withTemplate:@""];
     }
 
+    return strippedTypeEncoding;
+}
+
+@implementation NSMethodSignature (Cedar)
+
++ (NSMethodSignature *)cdr_signatureFromBlock:(id)block {
+    const char *signatureTypes = Block_signature(block);
+    NSString *strippedSignatureTypeString = cdr_stripProblematicEncodings(signatureTypes);
     return [NSMethodSignature signatureWithObjCTypes:[strippedSignatureTypeString UTF8String]];
 }
 
 - (NSMethodSignature *)cdr_signatureWithoutSelectorArgument {
     NSAssert([self numberOfArguments]>1 && strcmp([self getArgumentTypeAtIndex:1], ":")==0, @"Unable to remove _cmd from a method signature without a _cmd argument");
 
-    NSMutableString *modifiedTypesString = [[[NSMutableString alloc] initWithUTF8String:[self methodReturnType]] autorelease];
+    NSMutableString *modifiedTypesString = [NSMutableString string];
+    [modifiedTypesString appendString:cdr_stripProblematicEncodings([self methodReturnType])];
+
     for (NSInteger argIndex=0; argIndex<[self numberOfArguments]; argIndex++) {
         if (argIndex==1) { continue; }
-        [modifiedTypesString appendFormat:@"%s", [self getArgumentTypeAtIndex:argIndex]];
+        [modifiedTypesString appendString:cdr_stripProblematicEncodings([self getArgumentTypeAtIndex:argIndex])];
     }
 
     return [NSMethodSignature signatureWithObjCTypes:[modifiedTypesString UTF8String]];
