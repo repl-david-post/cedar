@@ -15,15 +15,18 @@ static const char *Block_signature(id blockObj) {
 static NSString *cdr_stripProblematicEncodings(const char *typeEncoding) {
     NSString *typeEncodingString = [NSString stringWithUTF8String:typeEncoding];
 
-    NSString *quotedSubstringsPattern = @"\".*?\"";
-    NSString *angleBracketedSubstringsPattern = @"<.*?>";
-    NSString *parenthesizedSubstringsPattern = @"\\(.*?\\)";
+    // Replace complex BOOL union encodings with simple 'B' (C++ bool)
+    // This handles encodings like (?={?=CCCCCCCC}Q) that appear in newer Xcode versions
+    NSRegularExpression *boolUnionPattern = [NSRegularExpression regularExpressionWithPattern:@"\\(\\?=\\{\\?=C+\\}[^)]*\\)" options:0 error:NULL];
+    NSString *strippedTypeEncoding = [boolUnionPattern stringByReplacingMatchesInString:typeEncodingString options:0 range:NSMakeRange(0, [typeEncodingString length]) withTemplate:@"B"];
 
-    NSString *strippedTypeEncoding = typeEncodingString;
-    for (NSString *pattern in @[quotedSubstringsPattern, angleBracketedSubstringsPattern, parenthesizedSubstringsPattern]) {
-        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:NSRegularExpressionCaseInsensitive error:NULL];
-        strippedTypeEncoding = [regex stringByReplacingMatchesInString:strippedTypeEncoding options:0 range:NSMakeRange(0, [strippedTypeEncoding length]) withTemplate:@""];
-    }
+    // Strip quoted substrings (e.g., "name")
+    NSRegularExpression *quotedPattern = [NSRegularExpression regularExpressionWithPattern:@"\".*?\"" options:0 error:NULL];
+    strippedTypeEncoding = [quotedPattern stringByReplacingMatchesInString:strippedTypeEncoding options:0 range:NSMakeRange(0, [strippedTypeEncoding length]) withTemplate:@""];
+
+    // Strip angle-bracketed content (e.g., <ProtocolName>)
+    NSRegularExpression *angleBracketPattern = [NSRegularExpression regularExpressionWithPattern:@"<.*?>" options:0 error:NULL];
+    strippedTypeEncoding = [angleBracketPattern stringByReplacingMatchesInString:strippedTypeEncoding options:0 range:NSMakeRange(0, [strippedTypeEncoding length]) withTemplate:@""];
 
     return strippedTypeEncoding;
 }
