@@ -162,7 +162,7 @@
         if (method) {
             const char *types = method_getTypeEncoding(method);
             if (types) {
-                NSString *cleanedTypes = cdr_stripProblematicEncodings(types);
+                NSString *cleanedTypes = [NSMethodSignature cdr_stripProblematicEncodings: types];
                 originalMethodSignature = [NSMethodSignature signatureWithObjCTypes:[cleanedTypes UTF8String]];
             }
         }
