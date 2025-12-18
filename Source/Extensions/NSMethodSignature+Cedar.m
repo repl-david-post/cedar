@@ -13,20 +13,31 @@ static const char *Block_signature(id blockObj) {
 }
 
 static NSString *cdr_stripProblematicEncodings(const char *typeEncoding) {
+    if (!typeEncoding) {
+        return @"";
+    }
+
     NSString *typeEncodingString = [NSString stringWithUTF8String:typeEncoding];
 
-    // Replace complex BOOL union encodings with simple 'B' (C++ bool)
-    // This handles encodings like (?={?=CCCCCCCC}Q) that appear in newer Xcode versions
-    NSRegularExpression *boolUnionPattern = [NSRegularExpression regularExpressionWithPattern:@"\\(\\?=\\{\\?=C+\\}[^)]*\\)" options:0 error:NULL];
-    NSString *strippedTypeEncoding = [boolUnionPattern stringByReplacingMatchesInString:typeEncodingString options:0 range:NSMakeRange(0, [typeEncodingString length]) withTemplate:@"B"];
+    // Replace ANY parenthesized union/struct encodings with 'B' (C++ bool)
+    // This handles complex encodings like (?={?=CCCCCCCC}Q) in Xcode 26+
+    // More aggressive pattern to catch all variants
+    NSRegularExpression *unionPattern = [NSRegularExpression regularExpressionWithPattern:@"\\([^)]*\\)" options:0 error:NULL];
+    NSString *strippedTypeEncoding = [unionPattern stringByReplacingMatchesInString:typeEncodingString options:0 range:NSMakeRange(0, [typeEncodingString length]) withTemplate:@"B"];
 
     // Strip quoted substrings (e.g., "name")
-    NSRegularExpression *quotedPattern = [NSRegularExpression regularExpressionWithPattern:@"\".*?\"" options:0 error:NULL];
+    NSRegularExpression *quotedPattern = [NSRegularExpression regularExpressionWithPattern:@"\"[^\"]*\"" options:0 error:NULL];
     strippedTypeEncoding = [quotedPattern stringByReplacingMatchesInString:strippedTypeEncoding options:0 range:NSMakeRange(0, [strippedTypeEncoding length]) withTemplate:@""];
 
     // Strip angle-bracketed content (e.g., <ProtocolName>)
-    NSRegularExpression *angleBracketPattern = [NSRegularExpression regularExpressionWithPattern:@"<.*?>" options:0 error:NULL];
+    NSRegularExpression *angleBracketPattern = [NSRegularExpression regularExpressionWithPattern:@"<[^>]*>" options:0 error:NULL];
     strippedTypeEncoding = [angleBracketPattern stringByReplacingMatchesInString:strippedTypeEncoding options:0 range:NSMakeRange(0, [strippedTypeEncoding length]) withTemplate:@""];
+
+    // If after stripping we end up with an empty or whitespace-only string, default to 'B' (bool)
+    strippedTypeEncoding = [strippedTypeEncoding stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if ([strippedTypeEncoding length] == 0) {
+        return @"B";
+    }
 
     return strippedTypeEncoding;
 }
@@ -44,18 +55,29 @@ static NSString *cdr_stripProblematicEncodings(const char *typeEncoding) {
         return nil;
     }
 
-    // Build a cleaned signature string from the original signature
-    NSMutableString *cleanedSignatureString = [NSMutableString string];
+    @try {
+        // Build a cleaned signature string from the original signature
+        NSMutableString *cleanedSignatureString = [NSMutableString string];
 
-    // Add the return type
-    [cleanedSignatureString appendString:cdr_stripProblematicEncodings([signature methodReturnType])];
+        // Add the return type
+        const char *returnType = [signature methodReturnType];
+        NSString *cleanedReturnType = cdr_stripProblematicEncodings(returnType);
+        [cleanedSignatureString appendString:cleanedReturnType];
 
-    // Add all argument types
-    for (NSUInteger i = 0; i < [signature numberOfArguments]; i++) {
-        [cleanedSignatureString appendString:cdr_stripProblematicEncodings([signature getArgumentTypeAtIndex:i])];
+        // Add all argument types
+        for (NSUInteger i = 0; i < [signature numberOfArguments]; i++) {
+            const char *argType = [signature getArgumentTypeAtIndex:i];
+            NSString *cleanedArgType = cdr_stripProblematicEncodings(argType);
+            [cleanedSignatureString appendString:cleanedArgType];
+        }
+
+        return [NSMethodSignature signatureWithObjCTypes:[cleanedSignatureString UTF8String]];
+    } @catch (NSException *exception) {
+        // If sanitization fails, return the original signature
+        // This shouldn't happen, but provides a fallback
+        NSLog(@"Cedar: Failed to sanitize method signature: %@", exception);
+        return signature;
     }
-
-    return [NSMethodSignature signatureWithObjCTypes:[cleanedSignatureString UTF8String]];
 }
 
 - (NSMethodSignature *)cdr_signatureWithoutSelectorArgument {
