@@ -52,7 +52,7 @@ sharedExamplesFor(@"a Cedar ordinary fake", ^(NSDictionary *sharedContext) {
 
             context(@"when invoked with the incorrect class", ^{
                 it(@"should raise an exception", ^{
-                    ^{ [myOrdinaryFake methodWithNumber1:[[NSNumber alloc] initWithInt:1] andNumber2:arg]; } should raise_exception.with_reason(@"Wrong arguments supplied to stub");
+                    ^{ [myOrdinaryFake methodWithNumber1:@3.14159265359 andNumber2:arg]; } should raise_exception.with_reason(@"Wrong arguments supplied to stub");
                 });
             });
 
