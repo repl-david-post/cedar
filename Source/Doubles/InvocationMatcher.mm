@@ -39,28 +39,24 @@ namespace Cedar { namespace Doubles {
             std::vector<char> actualArgumentBytes(actualArgumentSize);
             [invocation getArgument:actualArgumentBytes.data() atIndex:index];
 
-            if (!*cit) {
-                matches = false;
-            } else {
-                // Check if expected argument is nullptr but actual is not
-                ValueArgument<std::nullptr_t> *nullptr_arg = dynamic_cast<ValueArgument<std::nullptr_t>*>(cit->get());
-                if (nullptr_arg) {
-                    // Check if actual argument is non-null (any non-zero byte means non-null pointer)
-                    bool actual_is_non_null = false;
-                    for (size_t i = 0; i < actualArgumentSize; ++i) {
-                        if (actualArgumentBytes[i] != 0) {
-                            actual_is_non_null = true;
-                            break;
-                        }
+            // Check if expected argument is nullptr but actual is not
+            ValueArgument<std::nullptr_t> *nullptr_arg = dynamic_cast<ValueArgument<std::nullptr_t>*>(cit->get());
+            if (nullptr_arg) {
+                // Check if actual argument is non-null (any non-zero byte means non-null pointer)
+                bool actual_is_non_null = false;
+                for (size_t i = 0; i < actualArgumentSize; ++i) {
+                    if (actualArgumentBytes[i] != 0) {
+                        actual_is_non_null = true;
+                        break;
                     }
-                    if (actual_is_non_null) {
-                        matches = false;
-                    } else {
-                        matches = (*cit)->matches_bytes(actualArgumentBytes.data());
-                    }
+                }
+                if (actual_is_non_null) {
+                    matches = false;
                 } else {
                     matches = (*cit)->matches_bytes(actualArgumentBytes.data());
                 }
+            } else {
+                matches = (*cit)->matches_bytes(actualArgumentBytes.data());
             }
         }
 
