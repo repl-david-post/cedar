@@ -30,18 +30,40 @@ namespace Cedar { namespace Doubles {
     bool InvocationMatcher::matches_arguments(NSInvocation * const invocation) const {
         bool matches = true;
         size_t index = OBJC_DEFAULT_ARGUMENT_COUNT;
-        
+
         for (arguments_vector_t::const_iterator cit = arguments_.begin(); cit != arguments_.end() && matches; ++cit, ++index) {
             const char *actualArgumentEncoding = [invocation.methodSignature getArgumentTypeAtIndex:index];
             NSUInteger actualArgumentSize;
             NSGetSizeAndAlignment(actualArgumentEncoding, &actualArgumentSize, nil);
-            
+
             std::vector<char> actualArgumentBytes(actualArgumentSize);
             [invocation getArgument:actualArgumentBytes.data() atIndex:index];
-            
-            matches = (*cit)->matches_bytes(actualArgumentBytes.data());
+
+            if (!*cit) {
+                matches = false;
+            } else {
+                // Check if expected argument is nullptr but actual is not
+                ValueArgument<std::nullptr_t> *nullptr_arg = dynamic_cast<ValueArgument<std::nullptr_t>*>(cit->get());
+                if (nullptr_arg) {
+                    // Check if actual argument is non-null (any non-zero byte means non-null pointer)
+                    bool actual_is_non_null = false;
+                    for (size_t i = 0; i < actualArgumentSize; ++i) {
+                        if (actualArgumentBytes[i] != 0) {
+                            actual_is_non_null = true;
+                            break;
+                        }
+                    }
+                    if (actual_is_non_null) {
+                        matches = false;
+                    } else {
+                        matches = (*cit)->matches_bytes(actualArgumentBytes.data());
+                    }
+                } else {
+                    matches = (*cit)->matches_bytes(actualArgumentBytes.data());
+                }
+            }
         }
-        
+
         return matches;
     }
 
