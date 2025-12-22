@@ -54,7 +54,7 @@ EOF
     output_dir = if ENV['IS_CI_BOX']
                    ENV['CC_BUILD_ARTIFACTS']
                  else
-                   Dir.mkdir(BUILD_DIR) unless File.exists?(BUILD_DIR)
+                   Dir.mkdir(BUILD_DIR) unless File.exist?(BUILD_DIR)
                    BUILD_DIR
                  end
 
