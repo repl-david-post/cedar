@@ -42,18 +42,35 @@ namespace Cedar { namespace Doubles {
             // Check if expected argument is nullptr but actual is not
             ValueArgument<std::nullptr_t> *nullptr_arg = dynamic_cast<ValueArgument<std::nullptr_t>*>(cit->get());
             if (nullptr_arg) {
-                // Check if actual argument is non-null (any non-zero byte means non-null pointer)
-                bool actual_is_non_null = false;
-                for (size_t i = 0; i < actualArgumentSize; ++i) {
-                    if (actualArgumentBytes[i] != 0) {
-                        actual_is_non_null = true;
-                        break;
+                // Check if actual argument is nil
+                // This handles both regular null pointers and Swift nil optionals
+                bool actual_is_nil = false;
+
+                // Check for Swift optional (tuple encoding)
+                if (actualArgumentEncoding[0] == '{') {
+                    // Swift optional - check if all bytes are zero (nil optional)
+                    actual_is_nil = true;
+                    for (size_t i = 0; i < actualArgumentSize; ++i) {
+                        if (actualArgumentBytes[i] != 0) {
+                            actual_is_nil = false;
+                            break;
+                        }
+                    }
+                } else {
+                    // Regular pointer type - check if all bytes are zero
+                    actual_is_nil = true;
+                    for (size_t i = 0; i < actualArgumentSize; ++i) {
+                        if (actualArgumentBytes[i] != 0) {
+                            actual_is_nil = false;
+                            break;
+                        }
                     }
                 }
-                if (actual_is_non_null) {
-                    matches = false;
-                } else {
+
+                if (actual_is_nil) {
                     matches = (*cit)->matches_bytes(actualArgumentBytes.data());
+                } else {
+                    matches = false;
                 }
             } else {
                 matches = (*cit)->matches_bytes(actualArgumentBytes.data());
