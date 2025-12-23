@@ -12,7 +12,7 @@ task :install => [:clean, :uninstall, "dist:prepare"] do
 end
 
 task :reinstall => [:uninstall] do
-  Dir.mkdir(DIST_STAGING_DIR) unless File.exists?(DIST_STAGING_DIR)
+  Dir.mkdir(DIST_STAGING_DIR) unless File.exist?(DIST_STAGING_DIR)
 
   Shell.run %{rm -rf "#{DIST_STAGING_DIR}"/*}
   Shell.run %{mkdir -p "#{DIST_STAGING_DIR}/Library/Developer/Xcode"}
@@ -73,7 +73,7 @@ task :uninstall do
       next if template == '.' || template == '..'
 
       template_plist = "#{template_dir}/#{template}/TemplateInfo.plist"
-      next unless File.exists?(template_plist)
+      next unless File.exist?(template_plist)
 
       if `#{PLISTBUDDY} -c "Print :Identifier" "#{template_plist}"`.start_with?(TEMPLATE_IDENTIFIER_PREFIX) ||
           `#{PLISTBUDDY} -c "Print :#{TEMPLATE_SENTINEL_KEY}" "#{template_plist}"`.start_with?("true")

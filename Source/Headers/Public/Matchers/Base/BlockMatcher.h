@@ -2,12 +2,12 @@
 
 #ifdef __cplusplus
 
-// The SDKs that ship with Xcode 7 define OBJC_BOOL_IS_BOOL or OBJC_BOOL_IS_CHAR depending
-// on the current platform. Here we enable backwards-compatibility
-#if defined(OBJC_BOOL_IS_BOOL)
-    #define CDR_OBJC_BOOL_IS_BOOL OBJC_BOOL_IS_BOOL
-#elif !defined(OBJC_BOOL_IS_CHAR) && (TARGET_OS_IPHONE && __LP64__)
-    #define CDR_OBJC_BOOL_IS_BOOL 1
+#if defined(__OBJC_BOOL_IS_BOOL) && __OBJC_BOOL_IS_BOOL
+// BOOL is C99 _Bool / C++ bool
+#define CDR_OBJC_BOOL_IS_BOOL 1
+#else
+// BOOL is signed char
+#define CDR_OBJC_BOOL_IS_BOOL 0
 #endif
 
 #if __has_feature(objc_arc)

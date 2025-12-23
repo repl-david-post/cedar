@@ -30,18 +30,65 @@ namespace Cedar { namespace Doubles {
     bool InvocationMatcher::matches_arguments(NSInvocation * const invocation) const {
         bool matches = true;
         size_t index = OBJC_DEFAULT_ARGUMENT_COUNT;
-        
+
         for (arguments_vector_t::const_iterator cit = arguments_.begin(); cit != arguments_.end() && matches; ++cit, ++index) {
             const char *actualArgumentEncoding = [invocation.methodSignature getArgumentTypeAtIndex:index];
             NSUInteger actualArgumentSize;
             NSGetSizeAndAlignment(actualArgumentEncoding, &actualArgumentSize, nil);
-            
+
             std::vector<char> actualArgumentBytes(actualArgumentSize);
             [invocation getArgument:actualArgumentBytes.data() atIndex:index];
-            
-            matches = (*cit)->matches_bytes(actualArgumentBytes.data());
+
+            // Check if expected argument is nullptr but actual is not
+            ValueArgument<std::nullptr_t> *nullptr_arg = dynamic_cast<ValueArgument<std::nullptr_t>*>(cit->get());
+            if (nullptr_arg) {
+                // Check if actual argument is nil
+                // This handles both regular null pointers and Swift nil optionals
+                bool actual_is_nil = false;
+
+                // Check for Swift optional (tuple encoding)
+                if (actualArgumentEncoding[0] == '{') {
+                    // Swift optional - check if all bytes are zero (nil optional)
+                    actual_is_nil = true;
+                    for (size_t i = 0; i < actualArgumentSize; ++i) {
+                        if (actualArgumentBytes[i] != 0) {
+                            actual_is_nil = false;
+                            break;
+                        }
+                    }
+                } else if (actualArgumentEncoding[0] == '@') {
+                    // Object pointer - check if nil or empty array (for Swift optional bridging)
+                    id actualObject = nullptr;
+                    [invocation getArgument:&actualObject atIndex:index];
+
+                    if (actualObject == nil) {
+                        actual_is_nil = true;
+                    } else if ([actualObject isKindOfClass:[NSArray class]]) {
+                        // Swift optional arrays are sometimes bridged as empty arrays instead of nil
+                        NSArray *array = (NSArray *)actualObject;
+                        actual_is_nil = (array.count == 0);
+                    }
+                } else {
+                    // Regular pointer type - check if all bytes are zero
+                    actual_is_nil = true;
+                    for (size_t i = 0; i < actualArgumentSize; ++i) {
+                        if (actualArgumentBytes[i] != 0) {
+                            actual_is_nil = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (actual_is_nil) {
+                    matches = (*cit)->matches_bytes(actualArgumentBytes.data());
+                } else {
+                    matches = false;
+                }
+            } else {
+                matches = (*cit)->matches_bytes(actualArgumentBytes.data());
+            }
         }
-        
+
         return matches;
     }
 

@@ -5,7 +5,7 @@ task :dist => ["dist:prepare", "dist:package"]
 
 namespace :dist do
   task :prepare do
-    Dir.mkdir(DIST_STAGING_DIR) unless File.exists?(DIST_STAGING_DIR)
+    Dir.mkdir(DIST_STAGING_DIR) unless File.exist?(DIST_STAGING_DIR)
 
     Shell.run %{rm -rf "#{DIST_STAGING_DIR}"/*}
     Shell.run %{mkdir -p "#{DIST_STAGING_DIR}/Library/Developer/Xcode"}

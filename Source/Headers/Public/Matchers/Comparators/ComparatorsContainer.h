@@ -89,8 +89,11 @@ namespace Cedar { namespace Matchers { namespace Comparators {
     }
 
     template<typename T, typename U, typename F>
-    bool compare_contains(const T & container, const U & element, F comparator) {
-        return container.end() != std::find_if(container.begin(), container.end(), [=](const U &lhs) { return comparator(lhs, element);});
+    bool compare_contains(const T &container, const U &element, F comparator) {
+        using value_type = typename T::value_type;
+        return container.end() != std::find_if(container.begin(),container.end(),[&](const value_type &lhs) {
+            return comparator(lhs, element);
+        });
     }
 
     template<typename T, typename U, typename F>
