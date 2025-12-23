@@ -5296,7 +5296,7 @@
 					"$(OTHER_CFLAGS)",
 					"-fobjc-call-cxx-cdtors",
 				);
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 6.2.3;
 				WARNING_CFLAGS = "-Wno-idiomatic-parentheses";
 			};
 			name = Debug;
@@ -5331,7 +5331,7 @@
 					"$(OTHER_CFLAGS)",
 					"-fobjc-call-cxx-cdtors",
 				);
-				SWIFT_VERSION = 4.0;
+				SWIFT_VERSION = 6.2.3;
 				WARNING_CFLAGS = "-Wno-idiomatic-parentheses";
 			};
 			name = Release;

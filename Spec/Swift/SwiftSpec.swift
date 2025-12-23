@@ -10,7 +10,7 @@ private func expectThat(_ value: Bool, file: String = #file, line: UInt = #line)
     }
 }
 
-private var globalValue__: String?
+nonisolated(unsafe) private var globalValue__: String?
 
 /// This mirrors `SpecSpec`
 class SwiftSpecSpec: CDRSpec {
