@@ -56,6 +56,18 @@ namespace Cedar { namespace Doubles {
                             break;
                         }
                     }
+                } else if (actualArgumentEncoding[0] == '@') {
+                    // Object pointer - check if nil or empty array (for Swift optional bridging)
+                    id actualObject = nullptr;
+                    [invocation getArgument:&actualObject atIndex:index];
+
+                    if (actualObject == nil) {
+                        actual_is_nil = true;
+                    } else if ([actualObject isKindOfClass:[NSArray class]]) {
+                        // Swift optional arrays are sometimes bridged as empty arrays instead of nil
+                        NSArray *array = (NSArray *)actualObject;
+                        actual_is_nil = (array.count == 0);
+                    }
                 } else {
                     // Regular pointer type - check if all bytes are zero
                     actual_is_nil = true;
