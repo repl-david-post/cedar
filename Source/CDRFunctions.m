@@ -19,13 +19,17 @@ static NSString * const CDRBuildVersionKey = @"CDRBuildVersionSHA";
 
 BOOL CDRClassIsOfType(Class class, const char * const className) {
     Protocol * protocol = NSProtocolFromString([NSString stringWithCString:className encoding:NSUTF8StringEncoding]);
-    if (strcmp(className, class_getName(class))) {
-        while (class) {
-            if (class_conformsToProtocol(class, protocol)) {
-                return YES;
-            }
-            class = class_getSuperclass(class);
+    // Use pointer equality instead of class_getName to skip the base class.
+    // class_getName crashes inside objc_class::demangledName for certain Swift
+    // runtime-internal types on iOS 18+/Xcode 26+. objc_lookUpClass is safe
+    // and gives us the same "skip the base class itself" guard without touching
+    // the name of every enumerated class.
+    Class baseClass = objc_lookUpClass(className);
+    while (class) {
+        if (class != baseClass && class_conformsToProtocol(class, protocol)) {
+            return YES;
         }
+        class = class_getSuperclass(class);
     }
 
     return NO;
