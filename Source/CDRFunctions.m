@@ -26,8 +26,15 @@ BOOL CDRClassIsOfType(Class class, const char * const className) {
     // the name of every enumerated class.
     Class baseClass = objc_lookUpClass(className);
     while (class) {
-        if (class != baseClass && class_conformsToProtocol(class, protocol)) {
-            return YES;
+        if (class != baseClass) {
+            BOOL conforms = NO;
+            @try {
+                conforms = class_conformsToProtocol(class, protocol);
+            } @catch (...) {
+                // class_conformsToProtocol crashes on unrealized ObjC/Swift
+                // classes in the Xcode 26+ runtime; skip them.
+            }
+            if (conforms) { return YES; }
         }
         class = class_getSuperclass(class);
     }
