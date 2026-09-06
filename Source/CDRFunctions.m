@@ -389,7 +389,7 @@ NSString *CDRGetTestBundleExtension() {
         extension = @".xctest";
     } else if ([arguments containsObject:@"-SenTest"]) {
         extension = @".octest";
-    } else if ((BOOL)NSClassFromString(@"XCTestCase")) {
+    } else if (NSClassFromString(@"XCTestCase") != nil) {
         extension = @".xctest";
     }
 
