@@ -19,23 +19,25 @@ static NSString * const CDRBuildVersionKey = @"CDRBuildVersionSHA";
 
 BOOL CDRClassIsOfType(Class class, const char * const className) {
     Protocol * protocol = NSProtocolFromString([NSString stringWithCString:className encoding:NSUTF8StringEncoding]);
-    // Use pointer equality instead of class_getName to skip the base class.
-    // class_getName crashes inside objc_class::demangledName for certain Swift
-    // runtime-internal types on iOS 18+/Xcode 26+. objc_lookUpClass is safe
-    // and gives us the same "skip the base class itself" guard without touching
-    // the name of every enumerated class.
+    // Guard against the base class itself (e.g. CDRSpec when searching for CDRSpec
+    // subclasses). Use pointer equality via objc_lookUpClass instead of class_getName
+    // because class_getName crashes inside objc_class::demangledName for certain Swift
+    // runtime-internal types on iOS 18+/Xcode 26+.
     Class baseClass = objc_lookUpClass(className);
+    if (class == baseClass) return NO;
+
+    // Walk the class hierarchy; a subclass (e.g. TimeOffRepositorySpec) does not
+    // directly adopt @protocol CDRSpec — only CDRSpec itself does — so we must keep
+    // walking until we hit a class that conforms rather than stopping at baseClass.
     while (class) {
-        if (class != baseClass) {
-            BOOL conforms = NO;
-            @try {
-                conforms = class_conformsToProtocol(class, protocol);
-            } @catch (...) {
-                // class_conformsToProtocol crashes on unrealized ObjC/Swift
-                // classes in the Xcode 26+ runtime; skip them.
-            }
-            if (conforms) { return YES; }
+        BOOL conforms = NO;
+        @try {
+            conforms = class_conformsToProtocol(class, protocol);
+        } @catch (...) {
+            // class_conformsToProtocol crashes on unrealized ObjC/Swift
+            // classes in the Xcode 26+ runtime; skip them.
         }
+        if (conforms) { return YES; }
         class = class_getSuperclass(class);
     }
 
