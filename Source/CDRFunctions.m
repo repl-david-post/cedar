@@ -1,5 +1,6 @@
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
+#import <mach-o/dyld.h>
 #import "CDRSpec.h"
 #import "CDRHooks.h"
 #import "CDRExampleGroup.h"
@@ -45,13 +46,33 @@ BOOL CDRClassIsOfType(Class class, const char * const className) {
 }
 
 void CDREnumerateClasses(void (^block)(Class class, BOOL *stop)) {
-    unsigned int numberOfClasses = objc_getClassList(NULL, 0);
-    Class classes[numberOfClasses];
-    numberOfClasses = objc_getClassList(classes, numberOfClasses);
-
+    // objc_getClassList returns unrealized stub classes from the Xcode 26+ dyld
+    // shared cache. Calling class_conformsToProtocol on a stub SIGSEGV-crashes —
+    // it is a C signal, not an ObjC exception, so @catch(...) cannot help.
+    // Fix: enumerate by image name and force-realize each class via objc_getClass()
+    // before passing it to the block. Skip system frameworks — CDRSpec subclasses
+    // are never in /usr/ or /System/, so omitting them is safe and fast.
+    uint32_t imageCount = _dyld_image_count();
+    NSMutableSet *seen = [NSMutableSet set];
     BOOL stop = NO;
-    for (unsigned int i = 0; i < numberOfClasses && !stop; ++i) {
-        block(classes[i], &stop);
+    for (uint32_t i = 0; i < imageCount && !stop; i++) {
+        const char *imageName = _dyld_get_image_name(i);
+        if (!imageName) { continue; }
+        if (strncmp(imageName, "/usr/", 5) == 0 ||
+            strncmp(imageName, "/System/", 8) == 0 ||
+            strncmp(imageName, "/Developer/", 11) == 0 ||
+            strncmp(imageName, "/private/preboot/", 17) == 0) { continue; }
+        unsigned int count = 0;
+        const char **names = objc_copyClassNamesForImage(imageName, &count);
+        if (!names) { continue; }
+        for (unsigned int j = 0; j < count && !stop; j++) {
+            NSString *key = [NSString stringWithUTF8String:names[j]];
+            if ([seen containsObject:key]) { continue; }
+            [seen addObject:key];
+            Class cls = objc_getClass(names[j]); // forces ObjC runtime realization
+            if (cls) { block(cls, &stop); }
+        }
+        free(names);
     }
 }
 
